@@ -357,34 +357,45 @@ def reset_table():
     target_locations = []
     start_box_loc = []
 
+#EMERGENCY VARIABLE -- to see if loaded and nothing changed -- should save again
+savedCSV = []
+
 def save_layout(name):
     global walls, targets, target_locations, start_box_loc
 
-    with open(name,'w') as file:
+    with open(name,'w',newline='') as file:
         writer = csv.writer(file)
 
         writer.writerows(walls)
         writer.writerows(target_locations)
-        writer.writerow(start_box_loc)
-
+        if len(start_box_loc) >= 1:
+            writer.writerow(start_box_loc)
+        else:
+            writer.writerow(["spawn",0,0])
+    
 def load_layout(file):
-    global visible_path_cells, start_box
+    global visible_path_cells, start_box, start_box_loc,target_locations,walls
     full_reset()
 
     with open(file, mode = 'r') as file:
         layoutSheet = csv.reader(file)
+        print(layoutSheet)
 
         for row in layoutSheet:
             selected_box = grid[int(row[1])][int(row[2])]
             if row[0] == "wall":
+                walls.append(["wall",int(row[1]),int(row[2])])
                 selected_box.wall = True
                 visible_path_cells = {}
             #then targets
             elif row[0] == "target":
                 if selected_box not in targets:
+                    if (["target",int(row[1]),int(row[2])]) not in target_locations:
+                        target_locations.append(["target",int(row[1]),int(row[2])])
                     selected_box.target = True
                     targets.append(selected_box)
                 else:
+                    target_locations = [tl for tl in target_locations if tl != ["target",int(row[1]),int(row[2])]]
                     selected_box.target = False
                     selected_box.target_index = -1
                     targets.remove(selected_box)
@@ -392,6 +403,7 @@ def load_layout(file):
             #then spawn setups
             elif row[0] == "spawn":
                 if start_box:
+                    start_box_loc = ["spawn",int(row[1]),int(row[2])]
                     start_box.start = False
                     start_box = selected_box
                     start_box.start = True
@@ -619,9 +631,9 @@ def main():
             window.blit(text_to_r,(1055,630 + (40 * i)))
 
         #Names & Project Title
-        names = font.render("Manu Lantin, RJ Paderayon",True, TEXT_COLOR)
+        names = font.render("WarePath v1.0",True, TEXT_COLOR)
         window.blit(names,(1055,745))
-        extra = font.render("MSYS 30: Final Project Code",True, TEXT_COLOR)
+        extra = font.render("Dev by Manu Lantin, RJ Paderayon",True, TEXT_COLOR)
         window.blit(extra,(1055,765))
 
         for i in range(COLUMNS):
